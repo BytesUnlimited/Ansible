@@ -1,0 +1,64 @@
+---
+
+# --------------------------------------------------------------------------------
+# Bytes Unlimited Ansible Scripts
+# (c) 2016 Anthony Affee
+# https://bytesunlimited.com
+# anthony@bytesunlimited.com
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check for services running via Systemd or Service Command
+#
+# Usage:
+# ansible-playbook playbooks/Service-Checker.yml \
+#     --extra-vars "variable_host={ip address or FQDN of host} \
+#         servicecheck={name of service}"
+#
+
+## Define Host(s) or Hostgroup(s) to run playbook against:
+# empty_group will fail to prevent hardcoded hosts to the script
+- hosts: "{{ variable_host | default('empty_group') }}"
+  become: true
+  #user: {Username}
+
+## Default variables to define:
+  vars:
+    service:
+
+## Defined Tasks to for Playbook:
+# Variable Checks
+  tasks:
+  - name: Fail script if required 'variable_host' parameter is missing
+    fail:
+      msg: "You have to add the --extra-vars='variable_host={ip address or FQDN of host}'"
+    when: (variable_host is not defined) or (variable_host == "")
+
+  - name: Fail script if required 'servicecheck' parameter is missing
+    fail:
+      msg: "You have to add the --extra-vars='servicecheck={Name of Service}'"
+    when: (servicecheck is not defined) or (servicecheck == "")
+
+# Main()
+  - name: populate service facts
+    service_facts:
+
+  - name: Warning for systemd name schemes
+    debug:
+      msg: 'Notice - If you recieve a "VARIABLE IS NOT DEFINED!" message, try adding ".service"'
+
+  - name: Looking up '{{ servicecheck }}' service you defined
+    debug:
+      #(Coming in 2.8) var: ansible_facts.services["{{ lookup('varnames', 'servicecheck') }}"]
+      var: ansible_facts.services["{{ servicecheck }}"]
